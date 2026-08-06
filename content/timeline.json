@@ -1,0 +1,51 @@
+[
+  {
+    "org": "EXL Service",
+    "role": "Lead Assistant Manager (Consultant 2)",
+    "period": "Feb 2026 — present",
+    "location": "Gurgaon · Remote",
+    "note": "Lead architecture for cloud-native data and API platforms on Azure for enterprise clients. Own the identity model, gateway choice and capacity sizing — each with a written record of the alternatives considered. Primary technical contact for client stakeholders and partner platform teams, from requirements through architecture sign-off to operational handover.",
+    "highlights": [
+      "Own identity model decisions (Managed Identity vs Service Principal), gateway choice (APIM vs Functions vs Container Apps) and capacity sizing, documented so they stay reviewable.",
+      "Primary technical point of contact for client stakeholders and partner platform teams including Wolters Kluwer Connect and Microsoft Fabric architects.",
+      "Run discovery and design workshops that convert ambiguous requirements into measurable SLAs signed off before any infrastructure is provisioned."
+    ]
+  },
+  {
+    "org": "Birchlogic",
+    "role": "Founding Engineer",
+    "period": "Jun 2025 — Feb 2026",
+    "location": "Delhi · Remote",
+    "note": "First engineer. Designed the architecture and flow diagrams for every Birchlogic product to date and led a team of five across backend and frontend. Built four products: a RAG security-scanning agent, an S3 cost and emissions analyser, a cloud carbon platform, and a document intelligence system.",
+    "highlights": [
+      "Designed a RAG-based AI agent generating actionable reports for websites and repositories using Groq, Gemini, OpenAI and Qdrant.",
+      "Deployed SAST, DAST and Git Leak tooling on AWS Fargate, feeding raw output through a RAG pipeline to produce consolidated scan reports.",
+      "Cut cloud spend by $1,000 while engineering the backend on Lambda, Fargate, SQS and EventBridge.",
+      "Led a team of 5 and owned the architecture for all Birchlogic tools."
+    ]
+  },
+  {
+    "org": "VisionIAS",
+    "role": "Software Engineer",
+    "period": "May 2023 — Jun 2025",
+    "location": "Noida · On-site",
+    "note": "Built a RAG agent that generates practice questions for students, rebuilt the notification service on Lambda and SQS to cut AWS spend, and led the iOS app used by more than 10,000 people a month.",
+    "highlights": [
+      "Designed a RAG-based AI agent generating student questions with Groq, Gemini, OpenAI, LangChain and Qdrant.",
+      "Redesigned the notification service on AWS Lambda, SQS and MongoDB, significantly reducing AWS cost.",
+      "Led the VisionIAS iOS app — 10,000+ monthly users — and cut crash rates through Xcode monitoring.",
+      "Designed a live video streaming module on FFmpeg with AES encryption for both VOD and live."
+    ]
+  },
+  {
+    "org": "Magadh Digital Solutions",
+    "role": "Full Stack Developer",
+    "period": "Aug 2022 — May 2023",
+    "location": "Gurugram · On-site",
+    "note": "Shipped three backend servers, two web apps and two mobile apps on Node.js, Express, Flutter and MongoDB. Live on the Play Store, serving 5,000+ daily active users and 50,000+ API requests an hour.",
+    "highlights": [
+      "3 backend servers, 2 web applications and 2 mobile applications, all shipped to production.",
+      "5,000+ daily active users, 50,000+ API requests per hour."
+    ]
+  }
+]

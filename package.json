@@ -1,0 +1,37 @@
+{
+  "name": "portfolio-v2",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start --port 8008 --hostname 127.0.0.1",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "deploy": "./deploy/deploy.sh",
+    "deploy:pull": "./deploy/deploy.sh --pull",
+    "rollback": "./deploy/rollback.sh",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:reload": "pm2 reload ecosystem.config.cjs --update-env",
+    "pm2:stop": "pm2 stop portfolio",
+    "pm2:logs": "pm2 logs portfolio",
+    "pm2:status": "pm2 describe portfolio"
+  },
+  "dependencies": {
+    "mongodb": "^7.5.0",
+    "next": "15.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.18"
+  }
+}

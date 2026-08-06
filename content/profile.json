@@ -1,0 +1,23 @@
+{
+  "name": "Gaurav Kumar",
+  "handle": "igaurav",
+  "role": "Senior Full Stack & Generative AI Engineer",
+  "location": "Gurgaon, India",
+  "timezone": "Asia/Kolkata",
+  "email": "connect@igaurav.dev",
+  "phone": "+91 9262715527",
+  "website": "https://gaurav.sites.biosites.in",
+  "github": "https://github.com/",
+  "linkedin": "https://www.linkedin.com/",
+  "x": "https://x.com/",
+  "yearsExperience": "4+",
+  "availability": "open to conversations",
+  "statement": "I build RAG pipelines, AI agents and vector-search systems that have to hold up under production load — and the backend architecture underneath them. Four years across Python, FastAPI, NestJS, Azure OpenAI and AWS, mostly on systems where a wrong answer costs someone money.",
+  "shortStatement": "Generative AI engineer and full-stack developer. RAG pipelines, AI agents, vector search, and the cloud architecture that keeps them standing up.",
+  "principles": [
+    "Write down the alternatives you rejected. A decision without its discarded options is not reviewable by the next engineer — it is just a fact someone has to live with.",
+    "Answer only from the provided scope. Every retrieval system I build refuses before it guesses, because a confident wrong answer is worse than no answer.",
+    "Turn ambiguity into a number before provisioning anything. \"Must feel like REST\" becomes throughput, latency and per-tenant quota, signed off in writing, or it becomes an argument later.",
+    "No custom middleware unless required. Every component you add is one more thing that can fail at 3am and one more thing someone has to understand."
+  ]
+}

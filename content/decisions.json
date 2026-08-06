@@ -1,0 +1,115 @@
+[
+  {
+    "id": "apim-policy-layer",
+    "title": "Put routing and quota in the APIM policy layer, not in a service",
+    "project": "data-monetization",
+    "date": "2026-03",
+    "status": "adopted",
+    "context": "Two product lines needed per-tenant rate limiting, routing, caching, schema validation and token injection in front of a shared GraphQL endpoint. The client mandate was explicit: no custom middleware unless required. Earlier testing had already produced an App Service single-instance failure.",
+    "decision": "Implement the whole edge layer as Azure APIM policy XML — product routing for /ucc360 and /iline, rate-limit-by-key per tenant, response caching, schema validation and Bearer-token injection.",
+    "alternatives": [
+      { "option": "Azure Functions in front of the endpoint", "why": "Rejected — a custom middleware tier is exactly what the mandate excluded, and it adds a deploy pipeline and a cold-start profile to the request path." },
+      { "option": "Container Apps", "why": "Rejected — most operational surface of the three, and nothing in the requirement justified running containers to apply a rate limit." },
+      { "option": "App Service", "why": "Rejected on evidence — single-instance failure observed during earlier testing." }
+    ],
+    "consequence": "Policy XML has no real local debugger and is harder to unit test than application code. Accepted, because it removed an entire tier that could fail at 3am for a platform billing external customers."
+  },
+  {
+    "id": "managed-identity",
+    "title": "Managed Identity over Service Principal",
+    "project": "data-monetization",
+    "date": "2026-02",
+    "status": "adopted",
+    "context": "Service-to-service auth across the Fabric Lakehouse, APIM and downstream Azure resources, with a partner gateway in the path and multiple engineering teams touching the deployment.",
+    "decision": "Managed Identity as the default identity model, with the rejected options written down alongside so the choice stays reviewable.",
+    "alternatives": [
+      { "option": "Service Principal with client secret", "why": "Rejected — a secret that must be rotated is a secret that will eventually not be rotated, and it has to live somewhere." },
+      { "option": "Service Principal with certificate", "why": "Rejected — better than a secret, but still shifts lifecycle management onto a team that has no reason to own it." }
+    ],
+    "consequence": "Ties the platform more tightly to Azure-native identity, which is a real portability cost. Acceptable for a Fabric-based platform that is not leaving Azure."
+  },
+  {
+    "id": "single-graphql-endpoint",
+    "title": "One GraphQL endpoint for both product lines",
+    "project": "data-monetization",
+    "date": "2026-02",
+    "status": "adopted",
+    "context": "Two product lines, ucc_360 and iline, selling access to the same Lakehouse Gold layer to external customers, through a partner gateway, with a consumer expectation that it 'feels like REST'.",
+    "decision": "Expose a single GraphQL endpoint over the Gold layer and differentiate the products at the gateway policy layer rather than in the service.",
+    "alternatives": [
+      { "option": "A REST service per product line", "why": "Rejected — two codebases drifting apart around one schema, and the second product would have paid the integration cost again from scratch." },
+      { "option": "One REST service with product query params", "why": "Rejected — pushes shape negotiation onto every consumer and gets you a bespoke response contract per customer within a year." }
+    ],
+    "consequence": "Consumers who wanted REST got a gateway that behaves like it, while the platform kept one schema to evolve. The GraphQL surface needs disciplined depth and complexity limits, enforced at the policy layer."
+  },
+  {
+    "id": "embedding-dedupe",
+    "title": "Deduplicate scanner findings on embeddings, not rules",
+    "project": "kaizen-ai",
+    "date": "2025-09",
+    "status": "adopted",
+    "context": "SAST, DAST and Git Leak each report the same underlying vulnerability in different vocabulary, with different severity opinions. Raw union of three reports is unreadable and goes untriaged.",
+    "decision": "Embed every finding into Qdrant and deduplicate on vector similarity, then group across tools and assign one AI-scored severity from five classes.",
+    "alternatives": [
+      { "option": "Rule-based matching on CWE/CVE identifiers", "why": "Rejected — only two of the three scanners emit reliable identifiers, and the overlap that matters most is described in prose." },
+      { "option": "Exact string matching on file and line", "why": "Rejected — DAST reports endpoints, SAST reports source locations. They rarely agree on a coordinate for the same issue." }
+    ],
+    "consequence": "Similarity thresholds are a judgement call with no correct answer. Tuned deliberately toward keeping duplicates rather than merging them, because a report that hides a CRITICAL is worthless in a way a repetitive one is not."
+  },
+  {
+    "id": "recursive-lm",
+    "title": "Recursive Language Model instead of flat retrieval",
+    "project": "dis",
+    "date": "2025-11",
+    "status": "adopted",
+    "context": "Document QA over long documents where every answer must come from the supplied scope. Flat top-k retrieval was returning locally relevant chunks that did not carry enough surrounding context to answer correctly.",
+    "decision": "Introduce a Recursive Language Model to decompose long documents progressively rather than retrieving a flat window.",
+    "alternatives": [
+      { "option": "Larger top-k", "why": "Rejected — more chunks, more noise, and the answer got harder to ground rather than easier." },
+      { "option": "Bigger fixed chunks", "why": "Rejected — trades precision for coverage and pushes cost up on every single query, including the easy ones." }
+    ],
+    "consequence": "More model calls per hard question. Paid for by keeping the scope guarantee intact, which is the entire reason the system is deployable in a compliance setting."
+  },
+  {
+    "id": "bullmq-over-managed-queue",
+    "title": "Redis + BullMQ over a managed queue for CUR processing",
+    "project": "sustainit",
+    "date": "2025-08",
+    "status": "adopted",
+    "context": "Cost & Usage Report processing is long-running, lumpy, and needs visible progress. A user uploads a report and waits; a worker dying mid-job must not silently restart the whole thing.",
+    "decision": "Redis with BullMQ for scheduling and orchestration of report processing.",
+    "alternatives": [
+      { "option": "SQS with Lambda workers", "why": "Rejected for this path — the 15-minute ceiling and weak progress reporting fit poorly with jobs that run for minutes and need a progress bar. Still used elsewhere in the stack for short work." },
+      { "option": "Synchronous processing in the API", "why": "Rejected — ties a multi-minute job to an HTTP connection, which fails the first time a load balancer disagrees." }
+    ],
+    "consequence": "We own retry semantics and dead-letter handling rather than inheriting them. That is real operational work, bought in exchange for resumability and progress the user can see."
+  },
+  {
+    "id": "fargate-task-isolation",
+    "title": "One Fargate task per scanner",
+    "project": "kaizen-ai",
+    "date": "2025-07",
+    "status": "adopted",
+    "context": "Three third-party security scanners with very different runtimes, dependency trees and failure modes, run against untrusted repositories and websites.",
+    "decision": "Deploy each scanner as its own isolated Fargate task.",
+    "alternatives": [
+      { "option": "All three in one container", "why": "Rejected — a dependency conflict between two scanners becomes an outage for all three, and one crash loses the whole scan." },
+      { "option": "Long-lived EC2 workers", "why": "Rejected — scanning is bursty and untrusted; per-scan isolation on demand is both cheaper and safer than a warm host accumulating state." }
+    ],
+    "consequence": "Higher per-scan startup cost and three sets of task definitions to maintain. Bought fault isolation on a path that runs untrusted input by design."
+  },
+  {
+    "id": "two-ingestion-paths",
+    "title": "Support both CUR upload and delegated read access",
+    "project": "s3-analyzer",
+    "date": "2025-06",
+    "status": "adopted",
+    "context": "Getting at a customer's Cost & Usage Report requires either a file from them or credentials into their account. Which of those procurement will approve varies by organisation and is not predictable in advance.",
+    "decision": "Build both paths and let the customer pick.",
+    "alternatives": [
+      { "option": "Delegated access only", "why": "Rejected — the cleaner engineering answer, and it loses every customer whose security team will not grant cross-account read." },
+      { "option": "Upload only", "why": "Rejected — works for a pilot, then becomes a manual monthly chore that quietly kills retention." }
+    ],
+    "consequence": "Two ingestion paths to keep working and test against. Directly removes the most common reason a deal stalls, which made it worth the duplication."
+  }
+]

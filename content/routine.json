@@ -1,0 +1,17 @@
+{
+  "timezone": "Asia/Kolkata",
+  "label": "Weekday routine",
+  "blocks": [
+    { "id": "sleep", "label": "Sleep", "start": "00:45", "end": "06:00", "category": "rest", "days": [0,1,2,3,4,5,6], "note": "5h15m. The number I'd most like to move." },
+    { "id": "wake", "label": "Wake up, hydrate", "start": "06:00", "end": "06:15", "category": "health", "days": [1,2,3,4,5], "note": "" },
+    { "id": "gym", "label": "Gym", "start": "06:15", "end": "07:30", "category": "health", "days": [1,2,3,4,5], "note": "Non-negotiable. It is first because everything after it is negotiable." },
+    { "id": "reset", "label": "Shower + breakfast", "start": "07:30", "end": "08:15", "category": "health", "days": [1,2,3,4,5], "note": "" },
+    { "id": "market-prep", "label": "Market prep & watchlist", "start": "08:15", "end": "09:00", "category": "trading", "days": [1,2,3,4,5], "note": "The decisions get made here, before the market can rush them." },
+    { "id": "trading", "label": "Trading", "start": "09:15", "end": "11:45", "category": "trading", "days": [1,2,3,4,5], "note": "Executing the plan written at 08:15, not improvising." },
+    { "id": "interview-prep-1", "label": "AI interview prep", "start": "12:00", "end": "13:00", "category": "learning", "days": [1,2,3,4,5], "note": "" },
+    { "id": "exl", "label": "EXL — day job", "start": "13:00", "end": "22:00", "category": "work", "days": [1,2,3,4,5], "note": "Azure platform architecture. The long block." },
+    { "id": "dinner", "label": "Dinner + break", "start": "22:00", "end": "22:30", "category": "health", "days": [0,1,2,3,4,5,6], "note": "" },
+    { "id": "interview-prep-2", "label": "AI interview prep", "start": "22:30", "end": "24:00", "category": "learning", "days": [1,2,3,4,5], "note": "The second pass, when the day job has stopped interrupting." },
+    { "id": "startup", "label": "Startup development", "start": "00:00", "end": "00:45", "category": "building", "days": [1,2,3,4,5], "note": "45 minutes. Small, but it compounds and it is mine." }
+  ]
+}

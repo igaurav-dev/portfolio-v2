@@ -1,0 +1,9 @@
+{
+  "AI / GenAI": ["Python", "OpenAI API", "Azure OpenAI", "RAG pipelines", "Embeddings", "Prompt engineering", "Qdrant", "Groq", "Gemini", "Recursive Language Model", "LangGraph", "LangChain"],
+  "Backend": ["Python", "FastAPI", "Node.js", "NestJS", "Express", "Redis", "BullMQ", "GraphQL"],
+  "Cloud": ["Azure AI Services", "Azure OpenAI", "Azure APIM", "AWS Lambda", "AWS Fargate", "S3", "ECS", "EKS", "EventBridge", "SQS"],
+  "Databases": ["MongoDB", "PostgreSQL", "Redis", "SQLite", "Qdrant", "Microsoft Fabric"],
+  "DevOps": ["Docker", "Kubernetes", "CI/CD", "Git"],
+  "Web": ["React", "Next.js", "Tailwind CSS", "OAuth"],
+  "Security": ["SAST", "DAST", "Git-Leak automation", "AI-based vulnerability analysis"]
+}

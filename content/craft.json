@@ -1,0 +1,26 @@
+[
+  {
+    "id": "backpressure",
+    "title": "Backpressure, felt",
+    "blurb": "Drag the producer rate above what the consumer can absorb and watch the queue decide who suffers. The three strategies are the three real options.",
+    "kind": "simulation"
+  },
+  {
+    "id": "consistent-hashing",
+    "title": "Consistent hashing",
+    "blurb": "Add and remove nodes from a hash ring and see exactly which keys move. The whole argument for virtual nodes in about nine seconds.",
+    "kind": "simulation"
+  },
+  {
+    "id": "latency-numbers",
+    "title": "Latency, to scale",
+    "blurb": "The numbers every engineer should know, drawn at actual relative size. An L1 reference is one pixel. A round trip to Mumbai is a very long line.",
+    "kind": "visualisation"
+  },
+  {
+    "id": "tail-latency",
+    "title": "Why p99 is the number that matters",
+    "blurb": "Fan out a request to N backends and watch the median stay flat while the tail eats you alive.",
+    "kind": "simulation"
+  }
+]

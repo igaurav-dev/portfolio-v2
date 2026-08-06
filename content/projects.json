@@ -1,0 +1,170 @@
+[
+  {
+    "slug": "data-monetization",
+    "name": "Data Monetization Platform",
+    "client": "Wolters Kluwer · EXL Service",
+    "tagline": "A Microsoft Fabric Lakehouse exposed to paying external customers through one GraphQL endpoint, at 2M+ requests a day.",
+    "year": "2026",
+    "role": "Platform architect",
+    "duration": "ongoing",
+    "status": "in production",
+    "kind": "company",
+    "stack": ["Azure APIM", "Microsoft Fabric", "GraphQL", "NestJS", "TypeScript", "PostgreSQL", "MongoDB", "Redis"],
+    "summary": "Architected an end-to-end data monetization platform on Microsoft Fabric that exposes the Lakehouse Gold layer to external customers through a single GraphQL endpoint, fronted by Azure API Management and reached through the Wolters Kluwer Connect (Embassy) gateway.",
+    "problem": "Two product lines needed to sell the same underlying Lakehouse data to external customers with per-tenant quotas, under a hard client mandate: no custom middleware unless genuinely required, and it has to feel like REST to the consumer. Earlier testing had already produced an App Service single-instance failure, so the obvious answer was off the table.",
+    "approach": [
+      "One GraphQL endpoint over the Fabric Gold layer, so product lines share a schema instead of forking a service each.",
+      "Pushed routing, quota and validation into the APIM low-code policy layer as XML — product routing for /ucc360 and /iline, rate-limit-by-key per tenant, response caching, schema validation and Bearer-token injection.",
+      "Chose the policy layer specifically to honour the no-custom-middleware mandate and to sidestep the App Service single-instance failure seen in earlier testing.",
+      "Sized capacity and wrote the identity model decision — Managed Identity over Service Principal — with the rejected options recorded alongside."
+    ],
+    "metrics": [
+      { "label": "Throughput per customer", "value": "50 TPS", "note": "contractual, per tenant" },
+      { "label": "Requests served", "value": "2M+/day", "note": "across both product lines" },
+      { "label": "Custom middleware", "value": "none", "note": "the mandate, met" }
+    ],
+    "tradeoffs": "APIM policy XML is harder to test than application code and there is no real local debugger for it. That cost is real. It bought us a gateway with no servers to keep alive, no deploy pipeline for the routing layer, and no repeat of the single-instance failure — which for a platform billing external customers was the right side of the trade.",
+    "wentWrong": "",
+    "links": []
+  },
+  {
+    "slug": "kaizen-ai",
+    "name": "kaizen.ai",
+    "client": "Birchlogic",
+    "tagline": "Three security scanners, one RAG agent that deduplicates their findings and explains how to fix each one.",
+    "year": "2025",
+    "role": "Founding engineer",
+    "duration": "8 months",
+    "status": "in production",
+    "kind": "company",
+    "stack": ["Python", "NestJS", "Node.js", "AWS Fargate", "Qdrant", "RAG", "SAST", "DAST", "Git Leak"],
+    "summary": "Runs SAST, DAST and Git Leak scanners against a website or repository, then puts their raw output through a RAG agent that deduplicates findings using embeddings, scores them, and writes a consolidated report with context-aware remediation for each issue.",
+    "problem": "Three scanners produce three reports of the same codebase, and they overlap constantly — the same vulnerability appears three times under three names with three severity opinions. The output is technically complete and practically unreadable, so nobody triages it.",
+    "approach": [
+      "Deployed each scanner as an isolated Fargate task, so a slow or crashing scanner cannot take the others down.",
+      "Embedded every raw finding into Qdrant and deduplicated on vector similarity, which catches the same issue described in three different vocabularies.",
+      "Cross-tool grouping with AI-driven scoring into five severity classes from VERY LOW to CRITICAL, so one issue carries one verdict.",
+      "Generated remediation on demand per issue rather than up front — the context is assembled only when someone actually asks about that finding."
+    ],
+    "metrics": [
+      { "label": "Scanners orchestrated", "value": "3", "note": "SAST · DAST · Git Leak" },
+      { "label": "Severity classes", "value": "5", "note": "VERY LOW → CRITICAL" },
+      { "label": "Deduplication", "value": "embedding-based", "note": "Qdrant vector similarity" }
+    ],
+    "tradeoffs": "Embedding-based dedupe is fuzzy by construction — set the threshold loose and you merge two genuinely different findings, set it tight and the report stays noisy. We tuned toward keeping duplicates over hiding a real issue, because a report that misses a CRITICAL is worthless in a way that a slightly repetitive one is not.",
+    "wentWrong": "",
+    "links": []
+  },
+  {
+    "slug": "s3-analyzer",
+    "name": "S3 Analyzer",
+    "client": "Birchlogic",
+    "tagline": "Reads your AWS Cost & Usage Report and tells you what your storage costs — in dollars and in CO₂.",
+    "year": "2025",
+    "role": "Founding engineer",
+    "duration": "5 months",
+    "status": "in production",
+    "kind": "company",
+    "stack": ["React", "TypeScript", "NestJS", "Python", "OpenAI", "LangChain", "Qdrant", "MongoDB", "PostgreSQL", "Redis", "AWS Lambda", "EC2"],
+    "summary": "Users upload an S3 Cost & Usage Report or hand over read credentials; Fargate services process it into total usage cost, CO₂ emissions and inter-, intra- and cross-region transfer statistics, then an AI layer turns that into specific optimisation suggestions.",
+    "problem": "The Cost & Usage Report contains the answer to \"why is our S3 bill this size\" and almost nobody can extract it. It is enormous, denormalised, and the emissions figure that sustainability teams now need isn't in there at all — it has to be derived.",
+    "approach": [
+      "Two ingestion paths — upload a CUR file or grant read access — because procurement will approve one of those two, never reliably both.",
+      "Aggregation and analytics pipelines across Node.js, Python, MongoDB, Lambda and EC2 to process telemetry at report scale.",
+      "Derived CO₂ alongside cost from the same usage rows, so decarbonisation targets and the finance number come from one source.",
+      "Qdrant-backed recommendations, so suggestions are grounded in that account's actual usage shape rather than generic best practice."
+    ],
+    "metrics": [
+      { "label": "Ingestion paths", "value": "2", "note": "CUR upload or delegated read access" },
+      { "label": "Derived per report", "value": "cost · CO₂ · transfer", "note": "inter-, intra- and cross-region" },
+      { "label": "Recommendations", "value": "account-specific", "note": "grounded in real usage" }
+    ],
+    "tradeoffs": "Emissions numbers are estimates built on published regional grid intensities, not measurements. We show the method rather than presenting a single confident figure, because a decarbonisation number nobody can audit is a liability the first time someone asks where it came from.",
+    "wentWrong": "",
+    "links": []
+  },
+  {
+    "slug": "sustainit",
+    "name": "SustainIT",
+    "client": "Birchlogic",
+    "tagline": "Carbon accounting across six AWS services and on-prem datacentre endpoints.",
+    "year": "2025",
+    "role": "Founding engineer",
+    "duration": "6 months",
+    "status": "in production",
+    "kind": "company",
+    "stack": ["Node.js", "NestJS", "Python", "Next.js", "AWS Lambda", "Fargate", "ECS", "EKS", "Redis", "BullMQ", "MongoDB", "PostgreSQL"],
+    "summary": "Calculates CO₂ emissions for cloud services and IT/datacentre endpoints by processing AWS Cost & Usage Reports into service-level figures, with AI-generated recommendations for reducing both emissions and spend. Azure support in progress.",
+    "problem": "Emissions reporting stops at the cloud boundary. Finance can tell you what EC2 cost; nobody can tell you what it emitted, per service, in a form that survives an audit — and the CUR is not built to answer that question.",
+    "approach": [
+      "A Python Cost & Usage Report processor that aggregates service data and computes emissions at service granularity rather than account level.",
+      "Coverage across EC2, Fargate, Lambda, S3, EBS and EKS, since a partial figure is not an emissions figure.",
+      "Redis and BullMQ for job scheduling — CUR processing is long-running and lumpy, and needed orchestration rather than a request/response path.",
+      "APIs on Lambda with AI layered on top for actionable reduction suggestions, not just a number on a dashboard."
+    ],
+    "metrics": [
+      { "label": "AWS services covered", "value": "6", "note": "EC2 · Fargate · Lambda · S3 · EBS · EKS" },
+      { "label": "Granularity", "value": "per service", "note": "not per account" },
+      { "label": "Cloud spend cut", "value": "$1,000", "note": "across the Birchlogic backend" }
+    ],
+    "tradeoffs": "BullMQ over a managed queue meant owning retry semantics and dead-letter handling ourselves. Worth it: CUR jobs run for minutes, need progress visible to the user, and need to resume rather than restart when a worker dies.",
+    "wentWrong": "",
+    "links": []
+  },
+  {
+    "slug": "dis",
+    "name": "Document Intelligence System",
+    "client": "Birchlogic",
+    "tagline": "Answers strictly from the documents you gave it, or it says it doesn't know.",
+    "year": "2025",
+    "role": "Founding engineer",
+    "duration": "4 months",
+    "status": "in production",
+    "kind": "company",
+    "stack": ["Python", "FastAPI", "PostgreSQL", "Recursive Language Model", "RAG", "Vector DB", "AWS", "Flutter"],
+    "summary": "A document QA system with one hard constraint: every answer comes from the supplied documents or it refuses. Ingestion extracts documents line by line into PostgreSQL, and a Recursive Language Model handles the long-context work that flat retrieval could not.",
+    "problem": "Document QA systems are judged on the answers they give and ruined by the ones they invent. In a compliance or contract setting, one fabricated clause costs more trust than a hundred correct answers earn.",
+    "approach": [
+      "Line-level ingestion into PostgreSQL, so a citation resolves to an exact location a human can go and check.",
+      "Scope enforced at the prompt and retrieval boundary — out-of-scope questions return a refusal instead of a plausible paragraph.",
+      "A Recursive Language Model to decompose long documents, after flat retrieval proved insufficient on real inputs.",
+      "FastAPI service layer with a Flutter client, so the same scoped-answer guarantee holds on mobile."
+    ],
+    "metrics": [
+      { "label": "Answer scope", "value": "provided docs only", "note": "refuses rather than guesses" },
+      { "label": "Ingestion granularity", "value": "line-level", "note": "citations resolve to a location" },
+      { "label": "Long-context strategy", "value": "Recursive LM", "note": "after flat retrieval fell short" }
+    ],
+    "tradeoffs": "Strict scoping makes the system look worse in demos — it refuses questions a general model would happily answer. That is the feature. The people who deploy this are not trying to be impressed; they are trying to not be sued.",
+    "wentWrong": "",
+    "links": []
+  },
+  {
+    "slug": "schedulon",
+    "name": "schedulon.app",
+    "client": "Personal",
+    "tagline": "Social automation platform — AI content generation, multi-platform scheduling, engagement analytics.",
+    "year": "2025",
+    "role": "Solo build",
+    "duration": "ongoing",
+    "status": "live",
+    "kind": "personal",
+    "stack": ["NestJS", "Node.js", "Next.js", "Redis", "Zustand", "React Query", "AWS Lambda", "EC2", "S3", "Lightsail", "EventBridge", "SQS", "Gemini", "OpenAI", "Nginx"],
+    "summary": "Generates content with AI, schedules it across LinkedIn and X, and reports back what actually landed — including a LinkedIn Carousel Maker and viral-post suggestions, from one dashboard.",
+    "problem": "Scheduling tools post on time and stop there. The part that actually decides whether posting is worth the hour is knowing what to write and when it will be seen, and that is exactly the part nobody automates.",
+    "approach": [
+      "OAuth into LinkedIn and X for direct distribution, supporting both manual and fully automated generation flows.",
+      "EventBridge and SQS driving the scheduler, so a publish failure retries instead of silently vanishing.",
+      "Optimal-time scheduling derived from engagement history rather than published generic advice.",
+      "A LinkedIn Carousel Maker and top-performing-post suggestions, because format drives reach as much as content does."
+    ],
+    "metrics": [
+      { "label": "Visits in first month", "value": "100+", "note": "no paid acquisition" },
+      { "label": "Engagements", "value": "1,000+", "note": "first month" },
+      { "label": "New registrations", "value": "20", "note": "first month" }
+    ],
+    "tradeoffs": "Built on two platform APIs I do not control, both of which have historically changed terms with little notice. The scheduler is deliberately decoupled from the publishers so that losing one integration costs a connector, not the product.",
+    "wentWrong": "",
+    "links": [{ "label": "schedulon.app", "href": "https://schedulon.app" }]
+  }
+]
