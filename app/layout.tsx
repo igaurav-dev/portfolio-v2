@@ -177,7 +177,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         description: profile.shortStatement,
         address: { "@type": "PostalAddress", addressLocality: "Gurgaon", addressCountry: "IN" },
         knowsAbout: Object.values(skills).flat(),
-        sameAs: [profile.website, profile.github, profile.linkedin, profile.x].filter(Boolean),
+        sameAs: [profile.website, profile.github, profile.linkedin, profile.x]
+          .filter(Boolean)
+          .filter((url) => url.replace(/\/$/, "") !== SITE_URL.replace(/\/$/, "")),
       },
       {
         "@type": "ProfessionalService",

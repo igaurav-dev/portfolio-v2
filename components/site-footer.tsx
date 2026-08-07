@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Profile } from "@/lib/content";
 import { getRepoCard } from "@/lib/github";
+import { SITE_URL } from "@/lib/site";
 
 const CLOSERS = [
   "No cookie banner, because there are no cookies. There is exactly one, it only exists if you log into the admin, and it is a signature.",
@@ -185,9 +186,16 @@ export async function SiteFooter({ profile }: { profile: Profile }) {
                   { href: profile.github, label: "GitHub" },
                   { href: profile.linkedin, label: "LinkedIn" },
                   { href: profile.x, label: "X" },
-                  { href: profile.website, label: "Bio site" },
+                  { href: profile.website, label: "Website" },
                 ]
-                  .filter((l) => l.href)
+                  // Drop empties, and drop anything pointing back at this
+                  // site — a footer link to the page you are already on is
+                  // just noise.
+                  .filter(
+                    (l) =>
+                      l.href &&
+                      l.href.replace(/\/$/, "") !== SITE_URL.replace(/\/$/, ""),
+                  )
                   .map((l) => (
                     <li key={l.label}>
                       <a
