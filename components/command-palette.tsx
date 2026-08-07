@@ -245,7 +245,7 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
             <div className="max-h-[46vh] overflow-y-auto py-1.5">
               {results.length === 0 && (
                 <p className="mono px-4 py-6 text-center" style={{ color: "var(--faint)" }}>
-                  nothing matches — try &ldquo;graveyard&rdquo; or &ldquo;p99&rdquo;
+                  nothing matches — try &ldquo;decisions&rdquo; or &ldquo;qdrant&rdquo;
                 </p>
               )}
               {Object.entries(grouped).map(([group, items]) => (

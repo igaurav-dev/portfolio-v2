@@ -3,7 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  experimental: { optimizePackageImports: [] },
+  // The Mongo driver reaches for node:net/tls; leave it external so Next
+  // never tries to bundle it for the edge runtime.
+  serverExternalPackages: ["mongodb"],
   async headers() {
     return [
       {

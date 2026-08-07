@@ -3,9 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminPlanner } from "./admin-planner";
+import { AdminCollection } from "./admin-collection";
+import { AdminAccount } from "./admin-account";
+import { SCHEMAS } from "@/lib/admin-schema";
 
-type Tab = "resume" | "planner" | "content";
-type Section = "profile" | "skills" | "timeline" | "projects" | "delta";
+type View =
+  | { kind: "overview" }
+  | { kind: "collection"; name: string }
+  | { kind: "planner" }
+  | { kind: "resume" }
+  | { kind: "raw" }
+  | { kind: "account" };
 
 interface Upload {
   id: string;
@@ -47,19 +55,51 @@ const SECTIONS: { id: Section; label: string; note: string }[] = [
   { id: "delta", label: "Growth entry", note: "appends the diff to /growth" },
 ];
 
+type Section = "profile" | "skills" | "timeline" | "projects" | "delta";
+
 export function AdminConsole({ synthesisEnabled }: { synthesisEnabled: boolean }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("resume");
+  const [view, setView] = useState<View>({ kind: "overview" });
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   const notify = useCallback((kind: "ok" | "err", text: string) => {
     setToast({ kind, text });
-    setTimeout(() => setToast(null), 5200);
+    setTimeout(() => setToast(null), 6000);
   }, []);
+
+  const isActive = (v: View) =>
+    v.kind === view.kind &&
+    (v.kind !== "collection" || (view.kind === "collection" && v.name === view.name));
+
+  const NavButton = ({ target, label, hint }: { target: View; label: string; hint?: string }) => (
+    <button
+      onClick={() => setView(target)}
+      className="block w-full border-b py-2 pl-3 text-left transition-colors"
+      style={{
+        borderColor: "var(--line)",
+        borderLeft: isActive(target) ? "2px solid var(--signal)" : "2px solid transparent",
+      }}
+    >
+      <span
+        className="text-[13.5px]"
+        style={{ color: isActive(target) ? "var(--signal)" : "var(--ink)" }}
+      >
+        {label}
+      </span>
+      {hint && (
+        <span className="mono ml-2" style={{ color: "var(--faint)" }}>
+          {hint}
+        </span>
+      )}
+    </button>
+  );
 
   return (
     <div>
-      <header className="mb-8 flex flex-wrap items-center gap-4 border-b pb-6" style={{ borderColor: "var(--line)" }}>
+      <header
+        className="mb-8 flex flex-wrap items-center gap-4 border-b pb-6"
+        style={{ borderColor: "var(--line)" }}
+      >
         <div>
           <p className="mono" style={{ color: "var(--signal)" }}>
             admin
@@ -67,19 +107,13 @@ export function AdminConsole({ synthesisEnabled }: { synthesisEnabled: boolean }
           <h1 className="mt-1 text-[24px] font-medium tracking-tight">Content console</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {(["resume", "planner", "content"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className="mono rounded border px-2.5 py-1"
-              style={{
-                borderColor: tab === t ? "var(--signal)" : "var(--line-bright)",
-                color: tab === t ? "var(--signal)" : "var(--dim)",
-              }}
-            >
-              {t === "resume" ? "résumé ingest" : t === "planner" ? "day planner" : "edit content"}
-            </button>
-          ))}
+          <a
+            href="/"
+            className="mono rounded border px-2.5 py-1"
+            style={{ borderColor: "var(--line-bright)", color: "var(--dim)" }}
+          >
+            view site
+          </a>
           <button
             onClick={async () => {
               await fetch("/api/admin/logout", { method: "POST" });
@@ -105,11 +139,196 @@ export function AdminConsole({ synthesisEnabled }: { synthesisEnabled: boolean }
         </div>
       )}
 
-      {tab === "resume" && (
-        <ResumeIngest synthesisEnabled={synthesisEnabled} notify={notify} />
-      )}
-      {tab === "planner" && <AdminPlanner notify={notify} />}
-      {tab === "content" && <ContentEditor notify={notify} />}
+      <div className="grid gap-10 lg:grid-cols-[14rem_1fr] lg:items-start">
+        <nav className="lg:sticky lg:top-24">
+          <p className="mono mb-2" style={{ color: "var(--faint)" }}>
+            manage
+          </p>
+          <NavButton target={{ kind: "overview" }} label="Overview" />
+          {SCHEMAS.map((s) => (
+            <NavButton
+              key={s.name}
+              target={{ kind: "collection", name: s.name }}
+              label={s.label}
+            />
+          ))}
+
+          <p className="mono mb-2 mt-6" style={{ color: "var(--faint)" }}>
+            tools
+          </p>
+          <NavButton target={{ kind: "planner" }} label="Day planner" />
+          <NavButton target={{ kind: "resume" }} label="Résumé ingest" hint="AI" />
+          <NavButton target={{ kind: "raw" }} label="Raw JSON" />
+          <NavButton target={{ kind: "account" }} label="Account" />
+        </nav>
+
+        <div className="min-w-0">
+          {view.kind === "overview" && <Overview notify={notify} onOpen={setView} />}
+          {view.kind === "collection" && (
+            <AdminCollection
+              key={view.name}
+              schema={SCHEMAS.find((s) => s.name === view.name)!}
+              notify={notify}
+            />
+          )}
+          {view.kind === "planner" && <AdminPlanner notify={notify} />}
+          {view.kind === "resume" && (
+            <ResumeIngest synthesisEnabled={synthesisEnabled} notify={notify} />
+          )}
+          {view.kind === "raw" && <ContentEditor notify={notify} />}
+          {view.kind === "account" && <AdminAccount notify={notify} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function Overview({
+  notify,
+  onOpen,
+}: {
+  notify: (kind: "ok" | "err", text: string) => void;
+  onOpen: (v: View) => void;
+}) {
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [health, setHealth] = useState<{ backend: string; ok: boolean; detail: string; latencyMs: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    const results = await Promise.all(
+      SCHEMAS.map(async (s) => {
+        const res = await fetch(`/api/admin/records?collection=${s.name}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return [s.name, 0] as const;
+        const j = await res.json();
+        if (!health) setHealth(j.health);
+        return [s.name, Array.isArray(j.data) ? j.data.length : j.data ? 1 : 0] as const;
+      }),
+    );
+    setCounts(Object.fromEntries(results));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const migrate = async (overwrite: boolean) => {
+    if (overwrite && !confirm("Overwrite every collection in MongoDB with the JSON files? Existing edits are lost."))
+      return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/migrate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ overwrite }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.hint ? `${j.error} — ${j.hint}` : j.error);
+      const seeded = j.collections.filter((c: { seeded: boolean }) => c.seeded);
+      notify(
+        "ok",
+        seeded.length
+          ? `imported ${seeded.map((c: { name: string; after: number }) => `${c.name} (${c.after})`).join(", ")}`
+          : "every collection already had data — nothing imported",
+      );
+      await load();
+    } catch (err) {
+      notify("err", err instanceof Error ? err.message : "migration failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const isMongo = health?.backend === "mongodb";
+
+  return (
+    <div>
+      <div className="mb-8 border-b pb-6" style={{ borderColor: "var(--line)" }}>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <span className="pulse-dot" aria-hidden />
+          <span className="mono" style={{ color: health?.ok ? "var(--signal)" : "var(--dead)" }}>
+            {health ? (isMongo ? "mongodb" : "json file store") : "checking…"}
+          </span>
+          {health && (
+            <span className="mono" style={{ color: "var(--faint)" }}>
+              {health.detail} · {health.latencyMs.toFixed(1)}ms
+            </span>
+          )}
+        </div>
+
+        {!isMongo && (
+          <p className="max-w-[74ch] text-[13.5px]" style={{ color: "var(--dim)" }}>
+            Content is being read from and written to <code>content/*.json</code>. That
+            works, and it survives a redeploy only because the files are in git. Set{" "}
+            <code>MONGODB_URI</code> in <code>.env.local</code> and restart, then use
+            Import below to move everything into the database — after that, edits here
+            persist independently of deploys.
+          </p>
+        )}
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button
+            onClick={() => migrate(false)}
+            disabled={busy || !isMongo}
+            className="mono rounded border px-3 py-1.5 disabled:opacity-35"
+            style={{ borderColor: "var(--signal)", color: "var(--signal)" }}
+            title={isMongo ? "" : "requires MONGODB_URI"}
+          >
+            {busy ? "working…" : "import JSON → MongoDB"}
+          </button>
+          <button
+            onClick={() => migrate(true)}
+            disabled={busy || !isMongo}
+            className="mono rounded border px-3 py-1.5 disabled:opacity-35"
+            style={{ borderColor: "var(--dead)", color: "var(--dead)" }}
+          >
+            re-import, overwriting
+          </button>
+          <a
+            href="/api/admin/export"
+            className="mono rounded border px-3 py-1.5"
+            style={{ borderColor: "var(--line-bright)", color: "var(--dim)" }}
+          >
+            export everything as JSON
+          </a>
+        </div>
+      </div>
+
+      <p className="mono mb-3" style={{ color: "var(--faint)" }}>
+        collections
+      </p>
+      <div className="grid gap-px sm:grid-cols-2 lg:grid-cols-3">
+        {SCHEMAS.map((s) => (
+          <button
+            key={s.name}
+            onClick={() => onOpen({ kind: "collection", name: s.name })}
+            className="row border-b py-3 pl-4 text-left"
+            style={{ borderColor: "var(--line)" }}
+          >
+            <p className="num text-[20px]" style={{ color: "var(--signal)" }}>
+              {counts[s.name] ?? "—"}
+            </p>
+            <p className="mt-0.5 text-[13.5px]">{s.label}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-8 border-t pt-6" style={{ borderColor: "var(--line)" }}>
+        <p className="mono mb-3" style={{ color: "var(--faint)" }}>
+          the two fields nothing can fill for you
+        </p>
+        <p className="max-w-[70ch] text-[13.5px]" style={{ color: "var(--dim)" }}>
+          Résumé extraction populates almost everything here. It cannot write{" "}
+          <strong>what went wrong</strong> or <strong>trade-offs</strong> on a project,
+          because those are not in a résumé and never will be — and they are the two
+          sections an interviewer will actually stop on. Apply the extraction, then go
+          back through Projects and write those by hand.
+        </p>
+      </div>
     </div>
   );
 }

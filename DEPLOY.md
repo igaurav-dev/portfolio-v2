@@ -35,10 +35,12 @@ Everything is optional — the site boots with an empty file. What each one unlo
 |---|---|
 | `NEXT_PUBLIC_SITE_URL` | correct canonical tags, sitemap and OG URLs |
 | `ANTHROPIC_API_KEY` | synthesised answers on `/ask`, résumé extraction in `/admin` |
-| `ADMIN_PASSWORD` + `ADMIN_SECRET` | the admin panel (without a password it cannot be opened at all) |
+| `ADMIN_EMAIL` + `ADMIN_PASSWORD` | creates the first admin account on first start; without them `/admin` cannot be opened |
+| `ADMIN_SECRET` | signs session tokens for both the browser cookie and the mobile bearer token — long and random, changing it logs everyone out |
 | `GITHUB_USERNAME` | `/proof` — the receipts page |
 | `GITHUB_TOKEN` | raises GitHub from 60 to 5,000 req/hr. **Grant it zero scopes** |
-| `MONGODB_URI` | routine check-ins and the persistent answer cache move to Mongo |
+| `MONGODB_URI` | **all content** — profile, projects, decisions, experience, skills, routine, résumé history — plus check-ins and the answer cache move to Mongo |
+| `PORTFOLIO_REPO` | the repo shown in the footer card |
 
 `.env.local` is read automatically by `next start`. Never put secrets in
 `ecosystem.config.cjs` — that file is committed.
@@ -167,6 +169,47 @@ curl -s localhost:8008/api/health | jq
 `/status` in a browser gives you the same picture plus p50/p95/p99 from real
 traffic, cache hit rate, spend against the daily budget, and which storage
 backend is actually live.
+
+### The first admin
+
+On startup the server checks for an admin account. If the store is empty and
+`ADMIN_EMAIL` / `ADMIN_PASSWORD` are set, it creates one and logs it:
+
+```
+[admin] created the first admin from ADMIN_EMAIL / ADMIN_PASSWORD — you@example.com
+```
+
+Passwords are PBKDF2-hashed; nothing readable is ever written. Change the password
+from the Account page afterwards — the environment values are only a bootstrap, and
+once changed they stop working.
+
+If an account already exists the bootstrap is a no-op, so redeploying never resets
+your credentials. Lost the password? Delete the `admins` collection (or
+`data/admins.json`) and restart; it rebuilds from the environment.
+
+### Mobile app
+
+`mobile/` is a Flutter client for the same API. Point it at your server, sign in
+with the same credentials, and it gets a 30-day bearer token. See
+`mobile/README.md`. Nothing extra is needed server-side — `/api/admin/*` already
+accepts `Authorization: Bearer` alongside the cookie.
+
+### Moving content into MongoDB
+
+Without `MONGODB_URI` everything lives in `content/*.json`, which works but means
+admin edits have to be committed to git or the next `git pull` overwrites them.
+
+With it set, the collections **seed themselves from those files on first read**, so
+there is nothing to run — a fresh database comes up populated. If you want to force it,
+`/admin` → Overview → **Import JSON → MongoDB**. Same page has **Export everything as
+JSON** to pull the database back out for backup or to commit.
+
+After that the database is the source of truth and the JSON files are just seed data.
+Back the database up with `mongodump`, not by copying `content/`.
+
+Two failure modes, both handled: an unreachable Mongo falls back to reading the JSON
+files rather than serving an empty site, and `/api/health` reports `degraded` with the
+real connection error instead of pretending.
 
 ### Writable directories
 

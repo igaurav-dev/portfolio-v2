@@ -326,3 +326,71 @@ export const getGithubStats = cache(async (): Promise<GithubStats> => {
     }
   }, `@${login}${process.env.GITHUB_TOKEN ? " (authenticated)" : " (anonymous, 60/hr)"}`);
 });
+
+/* ------------------------------------------------------------------
+   A single repo — used by the footer for the "this site's own code"
+   card. Separate from the stats fetch so a footer never waits on the
+   full three-page event crawl.
+   ------------------------------------------------------------------ */
+
+export interface RepoCard {
+  ok: boolean;
+  fullName: string;
+  url: string;
+  description: string | null;
+  stars: number;
+  forks: number;
+  openIssues: number;
+  language: string | null;
+  pushedAt: string | null;
+  license: string | null;
+}
+
+export const getRepoCard = cache(
+  async (fullName = process.env.PORTFOLIO_REPO ?? "igaurav-dev/portfolio-v2"): Promise<RepoCard> => {
+    const fallback: RepoCard = {
+      ok: false,
+      fullName,
+      url: `https://github.com/${fullName}`,
+      description: null,
+      stars: 0,
+      forks: 0,
+      openIssues: 0,
+      language: null,
+      pushedAt: null,
+      license: null,
+    };
+
+    const g = globalThis as unknown as { __repoCard?: { at: number; value: RepoCard } };
+    if (g.__repoCard && Date.now() - g.__repoCard.at < TTL_MS) return g.__repoCard.value;
+
+    return span("github.repo", "net", async () => {
+      try {
+        const res = await fetch(`${API}/repos/${fullName}`, {
+          headers: headers(),
+          cache: "no-store",
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        const r = await res.json();
+        const value: RepoCard = {
+          ok: true,
+          fullName: String(r.full_name),
+          url: String(r.html_url),
+          description: (r.description as string) ?? null,
+          stars: Number(r.stargazers_count ?? 0),
+          forks: Number(r.forks_count ?? 0),
+          openIssues: Number(r.open_issues_count ?? 0),
+          language: (r.language as string) ?? null,
+          pushedAt: (r.pushed_at as string) ?? null,
+          license: (r.license?.spdx_id as string) ?? null,
+        };
+        g.__repoCard = { at: Date.now(), value };
+        return value;
+      } catch {
+        // The link still works; only the live numbers are missing.
+        return g.__repoCard?.value ?? fallback;
+      }
+    }, fullName);
+  },
+);

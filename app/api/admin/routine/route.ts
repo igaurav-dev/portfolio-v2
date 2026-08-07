@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import type { Routine, Block } from "@/lib/routine-core";
 import { segmentsForDay, toMinutes } from "@/lib/routine-core";
+import { readSingleton, saveSingleton } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
-const FILE = path.join(process.cwd(), "content", "routine.json");
+const FALLBACK: Routine = { timezone: "Asia/Kolkata", label: "Routine", blocks: [] };
 const CATEGORIES = ["health", "trading", "work", "learning", "building", "rest"];
 
 export async function GET() {
-  const routine = JSON.parse(await readFile(FILE, "utf8")) as Routine;
+  const routine = await readSingleton<Routine>("routine", FALLBACK);
   // Free time is derived, so the planner can preview it without saving.
   const preview = Object.fromEntries(
     [0, 1, 2, 3, 4, 5, 6].map((d) => [
@@ -82,7 +81,7 @@ export async function PUT(request: Request) {
   const result = validate(body.blocks);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
 
-  const current = JSON.parse(await readFile(FILE, "utf8")) as Routine;
+  const current = await readSingleton<Routine>("routine", FALLBACK);
   const next: Routine = {
     timezone: body.timezone || current.timezone,
     label: body.label || current.label,
@@ -90,13 +89,13 @@ export async function PUT(request: Request) {
   };
 
   try {
-    await writeFile(FILE, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+    await saveSingleton("routine", next as unknown as Record<string, unknown>);
     return NextResponse.json({ ok: true, blocks: next.blocks.length });
   } catch (err) {
     return NextResponse.json(
       {
         error: err instanceof Error ? err.message : "write failed",
-        hint: "Serverless filesystems are read-only — run the admin locally and commit routine.json.",
+        hint: "Without MONGODB_URI this writes to content/routine.json, which needs a writable filesystem.",
       },
       { status: 500 },
     );

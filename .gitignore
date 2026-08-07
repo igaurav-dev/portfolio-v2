@@ -7,5 +7,12 @@ out
 next-env.d.ts
 data/
 logs/
-
 .env
+# Flutter — generated per machine by `flutter create --platforms=android,ios .`
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins*
+mobile/pubspec.lock
+mobile/android/
+mobile/ios/
+mobile/.idea/

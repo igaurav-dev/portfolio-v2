@@ -167,14 +167,16 @@ export default async function StatusPage() {
       </section>
 
       <section className="border-b py-10" style={{ borderColor: "var(--line)" }}>
-        <SectionTitle count={store.backend}>store</SectionTitle>
+        <SectionTitle count={store.backend}>content store</SectionTitle>
         <div className="grid grid-cols-2 gap-6 py-4 sm:grid-cols-3">
           <Stat value={store.backend} label="backend" tone={store.ok ? "signal" : "dead"} />
           <Stat value={`${store.latencyMs.toFixed(1)}ms`} label="ping" />
           <Stat value={store.ok ? "reachable" : "down"} label="state" tone={store.ok ? "ink" : "dead"} />
         </div>
         <p className="mono max-w-[74ch]" style={{ color: "var(--faint)" }}>
-          {store.detail}
+          {store.detail} · every page on this site reads its content from here at
+          request time, which is why the admin panel changes the site without a
+          redeploy.
         </p>
       </section>
 

@@ -3,50 +3,99 @@ import {
   SESSION_COOKIE,
   SESSION_MAX_AGE,
   adminConfigured,
-  checkPassword,
+  authenticate,
   createSession,
+  ensureAdmin,
+  toPublic,
 } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
-const attempts = new Map<string, { count: number; until: number }>();
+interface Attempt {
+  count: number;
+  until: number;
+}
+const attempts = new Map<string, Attempt>();
+const MAX_ATTEMPTS = 8;
+const LOCKOUT_MS = 10 * 60 * 1000;
+
+function key(request: Request, email: string): string {
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "local";
+  return `${ip}:${email.toLowerCase()}`;
+}
 
 export async function POST(request: Request) {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  const now = Date.now();
-  const record = attempts.get(ip);
-  if (record && record.until > now && record.count >= 6) {
+  const body = (await request.json().catch(() => ({}))) as {
+    email?: string;
+    password?: string;
+    /** mobile clients get a long-lived bearer token instead of a cookie */
+    client?: "web" | "mobile";
+  };
+
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+  const password = typeof body.password === "string" ? body.password : "";
+  const isMobile = body.client === "mobile";
+
+  if (!email || !password) {
     return NextResponse.json(
-      { error: "too many attempts — wait a few minutes" },
+      { error: "email and password are both required" },
+      { status: 400 },
+    );
+  }
+
+  const bucket = key(request, email);
+  const now = Date.now();
+  const record = attempts.get(bucket);
+  if (record && record.until > now && record.count >= MAX_ATTEMPTS) {
+    return NextResponse.json(
+      {
+        error: `too many attempts — try again in ${Math.ceil((record.until - now) / 60000)} minutes`,
+      },
       { status: 429 },
     );
   }
 
-  if (!adminConfigured()) {
+  // Creates the first admin from the environment if none exists yet.
+  const bootstrap = await ensureAdmin();
+
+  const admin = await authenticate(email, password);
+  if (!admin) {
+    attempts.set(bucket, {
+      count: (record && record.until > now ? record.count : 0) + 1,
+      until: now + LOCKOUT_MS,
+    });
     return NextResponse.json(
-      { error: "ADMIN_PASSWORD is not set on the server" },
-      { status: 503 },
+      {
+        error: "incorrect email or password",
+        hint:
+          bootstrap.total === 0 && !adminConfigured()
+            ? "no admin exists yet — set ADMIN_EMAIL and ADMIN_PASSWORD in .env.local and restart"
+            : undefined,
+      },
+      { status: 401 },
     );
   }
 
-  const { password } = (await request.json().catch(() => ({}))) as {
-    password?: string;
+  attempts.delete(bucket);
+
+  const session = await createSession(admin.id, isMobile ? "mobile" : "web");
+  const payload = {
+    ok: true,
+    admin: toPublic(admin),
+    token: session.token,
+    expiresAt: session.expiresAt,
   };
 
-  if (typeof password !== "string" || !checkPassword(password)) {
-    attempts.set(ip, {
-      count: (record && record.until > now ? record.count : 0) + 1,
-      until: now + 10 * 60 * 1000,
-    });
-    // Constant-ish response time regardless of outcome.
-    await new Promise((r) => setTimeout(r, 350));
-    return NextResponse.json({ error: "incorrect password" }, { status: 401 });
-  }
+  // Mobile keeps the token itself; the browser gets an httpOnly cookie
+  // so no script on the page can read it.
+  if (isMobile) return NextResponse.json(payload);
 
-  attempts.delete(ip);
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set(SESSION_COOKIE, await createSession(), {
+  const response = NextResponse.json({ ...payload, token: undefined });
+  response.cookies.set(SESSION_COOKIE, session.token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

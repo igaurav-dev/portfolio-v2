@@ -63,7 +63,7 @@ export default async function HomePage() {
         <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-3">
           <ArrowLink href="/work">See the work</ArrowLink>
           <ArrowLink href="/ask">Ask this site a question</ArrowLink>
-          <ArrowLink href="/graveyard">Read what failed</ArrowLink>
+          <ArrowLink href="/decisions">Read the decisions</ArrowLink>
         </div>
       </section>
 

@@ -1,12 +1,12 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import path from "node:path";
 import { cache } from "react";
 import { span } from "./trace";
+import { readList, readSingleton, saveSingleton, replaceList } from "./store";
 
 /* ------------------------------------------------------------------
-   Content is read from disk at request time rather than imported, so
-   the spans in the trace strip measure real I/O — and so the admin
-   panel can write to the same files the site reads from.
+   Content comes from the store at request time — MongoDB when it is
+   configured, JSON files otherwise. Reading per request rather than
+   importing at build time is what lets the admin panel change the site
+   without a redeploy, and what makes the spans in the trace real.
    ------------------------------------------------------------------ */
 
 export interface Metric {
@@ -103,37 +103,33 @@ export interface ResumeDelta {
   summary: string;
 }
 
-const CONTENT_DIR = path.join(process.cwd(), "content");
+const EMPTY_PROFILE = {} as Profile;
 
-async function load<T>(file: string, fallback?: T): Promise<T> {
-  return span(`fs.read content/${file}`, "io", async () => {
-    try {
-      const raw = await readFile(path.join(CONTENT_DIR, file), "utf8");
-      return JSON.parse(raw) as T;
-    } catch (err) {
-      if (fallback !== undefined) return fallback;
-      throw err;
-    }
-  });
-}
+export const getProjects = cache(() => readList<Project>("projects"));
+export const getDecisions = cache(() => readList<Decision>("decisions"));
+export const getExperiments = cache(() => readList<Experiment>("experiments"));
+export const getTimeline = cache(() => readList<Role>("timeline"));
+export const getDeltas = cache(() => readList<ResumeDelta>("deltas"));
+export const getProfile = cache(() => readSingleton<Profile>("profile", EMPTY_PROFILE));
+export const getSkills = cache(() => readSingleton<Skills>("skills", {}));
 
-/** Used by the admin panel. Writes atomically-ish via a temp file. */
+/** Used by the admin panel. */
 export async function save(file: string, data: unknown): Promise<void> {
-  await mkdir(CONTENT_DIR, { recursive: true });
-  const target = path.join(CONTENT_DIR, file);
-  const tmp = `${target}.tmp`;
-  await writeFile(tmp, `${JSON.stringify(data, null, 2)}\n`, "utf8");
-  const { rename } = await import("node:fs/promises");
-  await rename(tmp, target);
+  const map: Record<string, { name: Parameters<typeof readList>[0]; single: boolean }> = {
+    "profile.json": { name: "profile", single: true },
+    "skills.json": { name: "skills", single: true },
+    "routine.json": { name: "routine", single: true },
+    "projects.json": { name: "projects", single: false },
+    "decisions.json": { name: "decisions", single: false },
+    "timeline.json": { name: "timeline", single: false },
+    "craft.json": { name: "experiments", single: false },
+    "deltas.json": { name: "deltas", single: false },
+  };
+  const target = map[file];
+  if (!target) throw new Error(`unknown content file: ${file}`);
+  if (target.single) await saveSingleton(target.name, data as Record<string, unknown>);
+  else await replaceList(target.name, data as Record<string, unknown>[]);
 }
-
-export const getProjects = cache(() => load<Project[]>("projects.json"));
-export const getDecisions = cache(() => load<Decision[]>("decisions.json", []));
-export const getExperiments = cache(() => load<Experiment[]>("craft.json"));
-export const getTimeline = cache(() => load<Role[]>("timeline.json"));
-export const getProfile = cache(() => load<Profile>("profile.json"));
-export const getSkills = cache(() => load<Skills>("skills.json", {}));
-export const getDeltas = cache(() => load<ResumeDelta[]>("deltas.json", []));
 
 export async function getProject(slug: string): Promise<Project | undefined> {
   const projects = await getProjects();
