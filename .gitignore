@@ -9,10 +9,10 @@ data/
 logs/
 .env
 # Flutter — generated per machine by `flutter create --platforms=android,ios .`
-mobile/.dart_tool/
-mobile/build/
-mobile/.flutter-plugins*
-mobile/pubspec.lock
-mobile/android/
-mobile/ios/
-mobile/.idea/
+mobile_app/.dart_tool/
+mobile_app/build/
+mobile_app/.flutter-plugins*
+mobile_app/pubspec.lock
+mobile_app/android/
+mobile_app/ios/
+mobile_app/.idea/

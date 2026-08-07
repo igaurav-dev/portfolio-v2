@@ -189,9 +189,9 @@ your credentials. Lost the password? Delete the `admins` collection (or
 
 ### Mobile app
 
-`mobile/` is a Flutter client for the same API. Point it at your server, sign in
+`mobile_app/` is a Flutter client for the same API. Point it at your server, sign in
 with the same credentials, and it gets a 30-day bearer token. See
-`mobile/README.md`. Nothing extra is needed server-side — `/api/admin/*` already
+`mobile_app/README.md`. Nothing extra is needed server-side — `/api/admin/*` already
 accepts `Authorization: Bearer` alongside the cookie.
 
 ### Moving content into MongoDB

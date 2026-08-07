@@ -5,7 +5,7 @@ planner, résumé ingestion and account settings. It talks to the same
 `/api/admin` surface the web panel uses.
 
 ```bash
-cd mobile
+cd mobile_app
 flutter pub get
 flutter run --dart-define=BASE_URL=http://10.0.2.2:8008
 ```

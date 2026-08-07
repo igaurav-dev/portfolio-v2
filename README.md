@@ -12,7 +12,7 @@ And a GitHub page that checks the rest of the site's claims against commit times
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4.1-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![MongoDB](https://img.shields.io/badge/MongoDB-optional-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
-[![Flutter](https://img.shields.io/badge/Flutter-admin_app-02569B?logo=flutter&logoColor=white)](./mobile)
+[![Flutter](https://img.shields.io/badge/Flutter-admin_app-02569B?logo=flutter&logoColor=white)](./mobile_app)
 [![Web fonts](https://img.shields.io/badge/web_fonts-zero-D8FF3E)](#why-there-are-no-web-fonts)
 
 </div>
@@ -267,14 +267,14 @@ The diff lands on `/growth`, and the new technologies surface as quick-chat chip
 
 <br>
 
-A phone client in [`mobile/`](./mobile) that does everything the web panel does.
+A phone client in [`mobile_app/`](./mobile_app) that does everything the web panel does.
 
 **The forms aren't written in Dart.** The app fetches `/api/admin/schema` — the same
 `lib/admin-schema.ts` that drives the web editors — and builds every form from it, including
 repeatable object rows. Add a field on the server and it appears on the phone with no app release.
 
 Login returns a 30-day bearer token kept in the platform keystore. See
-[mobile/README.md](./mobile/README.md).
+[mobile_app/README.md](./mobile_app/README.md).
 
 </details>
 
@@ -540,7 +540,7 @@ lib/
 
 components/craft/         backpressure · hash-ring · latency-scale · tail-latency
 content/*.json            everything you edit
-mobile/                   Flutter admin client
+mobile_app/               Flutter admin client
 deploy/                   nginx configs, deploy/rollback/setup scripts
 instrumentation.ts        creates the first admin at server startup
 ecosystem.config.cjs      PM2 — port 8008, fork mode, 1 instance
