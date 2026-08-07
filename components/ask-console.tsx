@@ -65,12 +65,79 @@ const SUGGESTED = [
   "What trade-offs has he accepted, and why?",
 ];
 
+/**
+ * Renders the model's prose with its [1][2] citations turned into clickable
+ * markers. The whole argument of this console is that you can check the
+ * answer against its sources, which only works if getting there is one tap.
+ */
+function AnswerBody({
+  text,
+  max,
+  onCite,
+}: {
+  text: string;
+  max: number;
+  onCite: (rank: number) => void;
+}) {
+  const paragraphs = text
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const render = (paragraph: string, key: number) => {
+    const nodes: React.ReactNode[] = [];
+    const pattern = /\[(\d+)\]/g;
+    let cursor = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = pattern.exec(paragraph)) !== null) {
+      if (match.index > cursor) nodes.push(paragraph.slice(cursor, match.index));
+      const rank = Number(match[1]);
+      // A citation pointing past the end of the source list is a model
+      // error; show it as plain text rather than a link to nothing.
+      nodes.push(
+        rank >= 1 && rank <= max ? (
+          <button
+            key={`${key}-${match.index}`}
+            onClick={() => onCite(rank)}
+            title={`jump to source ${rank}`}
+            className="mx-[1px] inline-flex h-[15px] min-w-[15px] items-center justify-center rounded-[3px] border align-super text-[10px] leading-none transition-colors hover:bg-[var(--signal)] hover:text-[var(--signal-ink)]"
+            style={{ borderColor: "var(--line-bright)", color: "var(--signal)" }}
+          >
+            {rank}
+          </button>
+        ) : (
+          <span key={`${key}-${match.index}`}>{match[0]}</span>
+        ),
+      );
+      cursor = pattern.lastIndex;
+    }
+    if (cursor < paragraph.length) nodes.push(paragraph.slice(cursor));
+    return nodes;
+  };
+
+  return (
+    <div className="max-w-[68ch]">
+      {paragraphs.map((paragraph, i) => (
+        <p
+          key={i}
+          className="text-[16px] leading-[1.72]"
+          style={{ color: "var(--ink)", marginTop: i === 0 ? 0 : "1em" }}
+        >
+          {render(paragraph, i)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function AskConsole({ recentlyLearned = [] }: { recentlyLearned?: string[] }) {
   const [question, setQuestion] = useState("");
   const [result, setResult] = useState<AskResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quota, setQuota] = useState<Quota | null>(null);
+  const [cited, setCited] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -301,9 +368,17 @@ export function AskConsole({ recentlyLearned = [] }: { recentlyLearned?: string[
             </p>
           )}
 
-          <p className="prose-body max-w-[68ch] text-[16px]" style={{ color: "var(--ink)" }}>
-            {result.answer}
-          </p>
+          <AnswerBody
+            text={result.answer}
+            max={result.hits.length}
+            onCite={(rank) => {
+              setCited(rank);
+              document
+                .getElementById(`hit-${rank}`)
+                ?.scrollIntoView({ behavior: "smooth", block: "center" });
+              setTimeout(() => setCited(null), 1800);
+            }}
+          />
 
           {result.warning && (
             <p
@@ -332,8 +407,14 @@ export function AskConsole({ recentlyLearned = [] }: { recentlyLearned?: string[
                 return (
                   <div
                     key={h.id}
-                    className="border-b py-3"
-                    style={{ borderColor: "var(--line)" }}
+                    id={`hit-${h.rank}`}
+                    className="scroll-mt-24 border-b px-2 py-3 transition-colors duration-300"
+                    style={{
+                      borderColor: "var(--line)",
+                      background: cited === h.rank ? "var(--raised)" : "transparent",
+                      boxShadow:
+                        cited === h.rank ? "inset 2px 0 0 0 var(--signal)" : "none",
+                    }}
                   >
                     <div className="flex items-baseline gap-3">
                       <span className="num shrink-0 text-[12px]" style={{ color: "var(--signal)" }}>

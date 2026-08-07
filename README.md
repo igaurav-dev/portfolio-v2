@@ -633,6 +633,42 @@ Something imported the Mongo driver into the edge runtime. `middleware.ts` must 
 </details>
 
 <details>
+<summary><b>Admin login redirects to <code>localhost:8008</code> in production</b></summary>
+
+<br>
+
+Your reverse proxy isn't forwarding the real host, so the app builds URLs from
+`Host: localhost:8008`. Add to the nginx server block:
+
+```nginx
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_pass http://127.0.0.1:8008;   # not http://localhost:8008
+```
+
+The middleware issues a *relative* `Location` header, so the redirect itself
+survives this misconfiguration — but canonical tags, OG URLs and the sitemap
+still need the correct host.
+
+</details>
+
+<details>
+<summary><b><code>ChunkLoadError</code> / "MIME type ('text/html') is not executable"</b></summary>
+
+<br>
+
+A new build shipped while a browser still held the old HTML, so it requested a
+chunk hash that no longer exists and got the 404 page back. `ChunkRecovery` in
+the root layout detects this and reloads once — with a 20-second guard so a
+genuinely broken deploy shows the real error instead of looping.
+
+If it persists after a hard refresh, the server is serving stale assets:
+rebuild and restart, and make sure nginx isn't caching `/_next/static/` across
+builds with a `proxy_cache` zone.
+
+</details>
+
+<details>
 <summary><b>Résumé upload returns 413</b></summary>
 
 <br>

@@ -99,7 +99,17 @@ sudo nginx -t && sudo systemctl reload nginx
 
 Certbot writes the certificate paths the config already references.
 
-### Three settings that will bite you if you change them
+### Four settings that will bite you if you change them
+
+**`proxy_set_header Host $host;`** — without it nginx forwards
+`Host: localhost:8008` (or `127.0.0.1:8008`), and anything the app builds from
+the request URL points at a machine-local address the browser cannot reach. The
+symptom is an admin redirect landing on `https://localhost:8008/admin/login`.
+The middleware now issues a *relative* redirect so it survives a misconfigured
+proxy, but everything else — canonical tags, OG URLs, the sitemap — still needs
+the real host. Also make sure `proxy_pass` targets `http://127.0.0.1:8008`
+rather than `http://localhost:8008`.
+
 
 **`client_max_body_size 10M`** — nginx defaults to 1MB. Résumé uploads are
 capped at 8MB in the app, so the default rejects them with a 413 before Node

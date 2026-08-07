@@ -14,6 +14,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { TraceStrip } from "@/components/trace-strip";
 import { CommandPalette, type Command } from "@/components/command-palette";
 import { Terminal, type TerminalPayload } from "@/components/terminal";
+import { ChunkRecovery } from "@/components/chunk-recovery";
 import { themeScript } from "@/components/theme";
 
 // Every page renders per request. That is the point: the telemetry at the
@@ -232,6 +233,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SiteFooter profile={profile} />
         </div>
 
+        <ChunkRecovery />
         <CommandPalette commands={commands} />
         <Terminal data={terminalData} />
         <TraceStrip traceId={trace.id} />

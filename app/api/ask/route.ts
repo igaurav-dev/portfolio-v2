@@ -28,8 +28,15 @@ Rules:
 - Every factual claim must come from a passage. Cite it inline as [1], [2], etc.
 - If the passages do not answer the question, say exactly what is missing. Do not fill the gap from general knowledge.
 - Never invent a metric, date, employer or technology that is not in a passage.
-- Answer in at most 130 words, plain prose, no headings and no bullet lists.
-- Write in third person about Gaurav.`;
+- Write in third person about Gaurav.
+
+Format:
+- At most 150 words total.
+- Break it into 2-3 short paragraphs separated by a blank line. Never return one
+  long block of prose — it is unreadable on a phone.
+- No headings, no bullet lists, no markdown emphasis. Plain sentences only.
+- Put each citation immediately after the claim it supports, not in a cluster at
+  the end of the paragraph.`;
 
 /** Budget and quota, so the console can show it before anyone spends anything. */
 export async function GET(request: Request) {
