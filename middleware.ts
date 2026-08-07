@@ -37,19 +37,44 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // A *relative* Location header, deliberately.
+  // Build the redirect from the forwarded headers rather than nextUrl.
   //
-  // request.nextUrl builds its origin from the Host header, which behind a
-  // reverse proxy is whatever nginx forwarded — commonly 127.0.0.1:8008 or
-  // localhost:8008. Redirecting to that absolute URL sends the browser to a
-  // machine-local address it cannot reach. RFC 7231 allows a relative
-  // Location, and every browser resolves it against the URL it actually
-  // requested, so this works no matter how the proxy is configured.
-  const target = `/admin/login?next=${encodeURIComponent(pathname)}`;
-  return new NextResponse(null, {
-    status: 307,
-    headers: { location: target, "cache-control": "no-store" },
-  });
+  // request.nextUrl derives its origin from the Host header, which behind a
+  // reverse proxy can be 127.0.0.1:8008 — a machine-local address the browser
+  // cannot reach. X-Forwarded-Proto and X-Forwarded-Host carry the address the
+  // visitor actually used.
+  //
+  // NextResponse requires an absolute URL here; a relative Location throws
+  // ERR_INVALID_URL and turns every unauthenticated hit into a 500.
+  const forwardedProto = request.headers
+    .get("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim();
+  const forwardedHost = request.headers
+    .get("x-forwarded-host")
+    ?.split(",")[0]
+    ?.trim();
+
+  const proto = forwardedProto || request.nextUrl.protocol.replace(":", "") || "https";
+  const host =
+    forwardedHost || request.headers.get("host") || request.nextUrl.host;
+
+  let target: URL;
+  try {
+    target = new URL(
+      `/admin/login?next=${encodeURIComponent(pathname)}`,
+      `${proto}://${host}`,
+    );
+  } catch {
+    // Malformed or missing host headers — fall back to the request's own URL
+    // so the visitor still lands on the login page.
+    target = new URL("/admin/login", request.nextUrl.origin);
+    target.searchParams.set("next", pathname);
+  }
+
+  const response = NextResponse.redirect(target, 307);
+  response.headers.set("cache-control", "no-store");
+  return response;
 }
 
 export const config = {

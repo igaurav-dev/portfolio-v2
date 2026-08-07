@@ -183,14 +183,15 @@ export async function SiteFooter({ profile }: { profile: Profile }) {
               </p>
               <ul className="space-y-1.5">
                 {[
+                  // profile.website is deliberately not listed. It is a
+                  // free-text field that outlives whatever it pointed at, and
+                  // a footer link to another "personal site" is noise on a
+                  // personal site. GitHub, LinkedIn and X are the only
+                  // off-site destinations worth offering.
                   { href: profile.github, label: "GitHub" },
                   { href: profile.linkedin, label: "LinkedIn" },
                   { href: profile.x, label: "X" },
-                  { href: profile.website, label: "Website" },
                 ]
-                  // Drop empties, and drop anything pointing back at this
-                  // site — a footer link to the page you are already on is
-                  // just noise.
                   .filter(
                     (l) =>
                       l.href &&

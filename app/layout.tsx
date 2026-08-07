@@ -56,11 +56,11 @@ export const metadata: Metadata = {
   },
 };
 
+// Dark regardless of the OS setting — the site does not follow it, so the
+// browser chrome should not either.
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
-    { media: "(prefers-color-scheme: light)", color: "#f7f7f5" },
-  ],
+  themeColor: "#0a0a0b",
+  colorScheme: "dark light",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

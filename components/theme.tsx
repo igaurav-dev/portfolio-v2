@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+// Dark is the design, not a preference. The OS setting is deliberately
+// ignored — only an explicit toggle on this site switches it, and that
+// choice is remembered. Runs before paint, so there is no flash.
 export const themeScript = `
 (function(){try{
   var s=localStorage.getItem('theme');
-  var d=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
-  document.documentElement.setAttribute('data-theme', s || d);
-}catch(e){}})();
+  document.documentElement.setAttribute('data-theme', s === 'light' ? 'light' : 'dark');
+}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();
 `;
 
 export function ThemeToggle() {
